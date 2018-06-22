@@ -1,0 +1,48 @@
+{
+  "name": "node-huobi-api",
+  "version": "1.0.8",
+  "description": "Node huobi API is an asynchronous node.js library for the huobi API designed to be easy to use.",
+  "main": "node-huobi-api.js",
+  "scripts": {
+    "test": "mocha",
+    "test-debug": "mocha --inspect-brk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davewang/node-huobi-api.git"
+  },
+  "keywords": [
+    "huobi",
+    "api"
+  ],
+  "author": "NPM DaveWang User <dave.wang2009@gmail.com> (http://www.iapploft.net)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/davewang/node-huobi-api/issues"
+  },
+  "homepage": "https://github.com/davewang/node-huobi-api#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "dns-sync": "^0.1.3",
+    "fs": "0.0.1-security",
+    "https-proxy-agent": "^2.2.1",
+    "pako": "^1.0.6",
+    "request": "^2.85.0",
+    "socks-proxy-agent": "^4.0.1",
+    "string-hash": "^1.1.3",
+    "url": "^0.11.0",
+    "ws": "^4.1.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-counter": "^1.0.0",
+    "codacy-coverage": "^2.1.1",
+    "codecov": "^3.0.0",
+    "coveralls": "^3.0.0",
+    "eslint": "^4.19.1",
+    "istanbul": "^0.4.5",
+    "jsdoc": "^3.5.5",
+    "mocha": "^5.2.0",
+    "mocha-lcov-reporter": "^1.3.0"
+  }
+}
