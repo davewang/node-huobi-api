@@ -55,7 +55,7 @@ it( 'Call exchangeInfo', function( done ) {
 
 describe( 'depthCache', function() {
     it( 'Call depthCache', function( done ) {
-        const tickers=['xrpbtc', 'bchusdt']
+        const tickers=['xrpbtc', 'bchusdt'];
         //done();
         huobi.websockets.depthCache( tickers,(symbol, depth) => {
             debug(symbol+'=='+ JSON.stringify( depth) );

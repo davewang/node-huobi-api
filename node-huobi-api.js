@@ -9,7 +9,6 @@ module.exports = function() {
     const dns = require('dns-sync');
     const HttpsProxyAgent = require('https-proxy-agent');
     const SocksProxyAgent = require('socks-proxy-agent');
-    const async = require('async');
     const stringHash = require('string-hash');
     const base = 'https://api.huobi.pro/';
     const stream = 'wss://api.huobi.pro/ws/';
@@ -365,7 +364,6 @@ module.exports = function() {
           data = pako.inflate(data,{ to: 'string' });
           try {
             let msg = JSON.parse(data);
-            //options.log(msg)
             if (msg.ping) {
               ws.send(JSON.stringify({ pong: msg.ping }));
             } else if (msg.subbed) {
@@ -447,7 +445,7 @@ module.exports = function() {
         let context = depthCacheContext[symbol];
 
         let updateDepthCache = function() {
-            //options.log("updateDepthCache---->");
+            //options.log('updateDepthCache---->');
             for ( obj of depth.tick.bids) { //bids
                 depthCache[symbol].bids[obj[0]] = parseFloat(obj[1]);
                 if ( obj[1] === '0.00000000' ) {
@@ -610,7 +608,7 @@ module.exports = function() {
                         let context = depthCacheContext[symbol];
                         context.endpointId = endpointId;
                     }
-                }
+                };
 
                 let handleDepthStreamData = function(depth) {
                     //options.log("---->"+Object.keys(depth ))
@@ -618,47 +616,47 @@ module.exports = function() {
                     let context = depthCacheContext[symbol];
                     if (context.messageQueue && !context.snapshotUpdateId ) {
                         context.messageQueue.push(depth);
-                    } else {
-                        try {
-                            depthHandler(depth);
-                        } catch (err) {
-                            return terminate(context.endpointId, true);
-                        }
-                        if ( callback ) callback(symbol, depthCache[symbol]);
                     }
-                };
-
-                let getSymbolDepthSnapshot = function(symbol){
-                      return new Promise((resolve, reject) => {
-                          publicRequest(base+'market/depth', { symbol:symbol, type:'step0' }, function(error, json) {
-                              if (error) {
-                                  return reject(error)
-                              }
-                              json.symb = symbol
-                              resolve(json)
-                          });
-                      })
-                };
-                let updateSymbolDepthCache = function (json) {
-                    let symbol = json.symb;
-                    depthCache[symbol] = depthData(json);
-                    // Prepare depth cache context
-                    let context = depthCacheContext[symbol];
-                    context.snapshotUpdateId = json.ts;
-                    //options.log('symbol: ' + symbol+" delete queue");
-                    context.messageQueue = context.messageQueue.filter(depth => depth.ts > context.snapshotUpdateId);
-                    // Process any pending depth messages
-                    for ( let depth of context.messageQueue ) {
-
-                        /* Although sync errors shouldn't ever happen here, we catch and swallow them anyway
-                          just in case. The stream handler function above will deal with broken caches. */
-                        try {depthHandler(depth);} catch (err) {
-                            // do nothing
-                        }
+                    try {
+                        depthCache[symbol] = depthData(depth)
+                        depthHandler(depth);
+                    } catch (err) {
+                        return terminate(context.endpointId, true);
                     }
-                    delete context.messageQueue;
                     if ( callback ) callback(symbol, depthCache[symbol]);
                 };
+
+                // let getSymbolDepthSnapshot = function(symbol){
+                //       return new Promise((resolve, reject) => {
+                //           publicRequest(base+'market/depth', { symbol:symbol, type:'step0' }, function(error, json) {
+                //               if (error) {
+                //                   return reject(error)
+                //               }
+                //               json.symb = symbol;
+                //               resolve(json)
+                //           });
+                //       })
+                // };
+                // let updateSymbolDepthCache = function (json) {
+                //     let symbol = json.symb;
+                //     depthCache[symbol] = depthData(json);
+                //     // Prepare depth cache context
+                //     let context = depthCacheContext[symbol];
+                //     context.snapshotUpdateId = json.ts;
+                //     //options.log('symbol: ' + symbol+" delete queue");
+                //     context.messageQueue = context.messageQueue.filter(depth => depth.ts > context.snapshotUpdateId);
+                //     // Process any pending depth messages
+                //     for ( let depth of context.messageQueue ) {
+                //
+                //         /* Although sync errors shouldn't ever happen here, we catch and swallow them anyway
+                //           just in case. The stream handler function above will deal with broken caches. */
+                //         try {depthHandler(depth);} catch (err) {
+                //             // do nothing
+                //         }
+                //     }
+                //     delete context.messageQueue;
+                //     if ( callback ) callback(symbol, depthCache[symbol]);
+                // };
 
                 /* If an array of symbols are sent we use a combined stream connection rather.
                   This is transparent to the developer, and results in a single socket connection.
@@ -682,19 +680,13 @@ module.exports = function() {
                               'id': `${symbol.toLowerCase()}`
                           }));
                          }
-                        //async.mapLimit(symbols, symbols.length, getSymbolDepthSnapshot)
-                        async.mapLimit(symbols, symbols.length, getSymbolDepthSnapshot, (err, results) => {
-                            if (err) throw err
-                            results.forEach(updateSymbolDepthCache);
-                        })
-                        //symbols.forEach(getSymbolDepthSnapshot);
                     });
                     symbols.forEach(s => assignEndpointIdToContext(s, subscription.endpoint));
                 } else {
                     let symbol = symbols;
                     symbolDepthInit(symbol);
                     subscription = subscribe(symbol.toLowerCase()+'@depth', handleDepthStreamData, reconnect, function() {
-                        getSymbolDepthSnapshot(symbol);
+                       // getSymbolDepthSnapshot(symbol);
                     });
                     assignEndpointIdToContext(symbol, subscription.endpoint);
                 }
