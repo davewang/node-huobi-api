@@ -1,10 +1,3 @@
-const WARN_SHOULD_BE_OBJ = 'should be an object';
-const WARN_SHOULD_BE_NULL = 'should be null';
-const WARN_SHOULD_BE_NOT_NULL = 'should not be null';
-const WARN_SHOULD_HAVE_KEY = 'should have key ';
-const WARN_SHOULD_NOT_HAVE_KEY = 'should not have key ';
-const WARN_SHOULD_BE_UNDEFINED = 'should be undefined';
-const WARN_SHOULD_BE_TYPE = 'should be a string ';
 const TIMEOUT = 10000;
 
 let chai = require( 'chai' );
@@ -12,10 +5,7 @@ let assert = chai.assert;
 let path = require( 'path' );
 let huobi = require( path.resolve( __dirname, 'node-huobi-api.js' ) );
 let util = require( 'util' );
- 
 
-let num_pairs = 299;
-let num_currencies = 156;
 
 let logger = {
   log: function (msg){
@@ -42,6 +32,7 @@ describe( 'Construct', function() {
     /*eslint no-undef: "error"*/
     it( 'Construct the huobi object', function( done ) {
         huobi.options( {
+        APIKEY: 'hello',
         useServerTime: true,
         reconnect: true,
         verbose: true,
@@ -64,14 +55,11 @@ it( 'Call exchangeInfo', function( done ) {
 
 describe( 'depthCache', function() {
     it( 'Call depthCache', function( done ) {
-        tickers=['xrpbtc', 'bchusdt']
+        const tickers=['xrpbtc', 'bchusdt']
         //done();
-        huobi.websockets.depthCache( tickers,(symbol, depth)  => {
-            debug(symbol+"=="+ JSON.stringify( depth) );
-            //debug( symbol );
-
-
+        huobi.websockets.depthCache( tickers,(symbol, depth) => {
+            debug(symbol+'=='+ JSON.stringify( depth) );
         },10);
         done();
     }).timeout( TIMEOUT );
-    });
+});

@@ -1,11 +1,12 @@
 {
   "name": "node-huobi-api",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Node huobi API is an asynchronous node.js library for the huobi API designed to be easy to use.",
   "main": "node-huobi-api.js",
   "scripts": {
     "test": "mocha",
-    "test-debug": "mocha --inspect-brk"
+    "test-debug": "mocha --inspect-brk",
+    "lint": "eslint -c .eslintrc.js node-huobi-api.js test.js "
   },
   "repository": {
     "type": "git",

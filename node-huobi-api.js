@@ -3,27 +3,23 @@ module.exports = function() {
     const WebSocket = require('ws');
     const pako = require('pako');
     const request = require('request');
-    const crypto = require('crypto');
+    //const crypto = require('crypto');
     const file = require('fs');
     const url = require('url');
     const dns = require('dns-sync');
     const HttpsProxyAgent = require('https-proxy-agent');
     const SocksProxyAgent = require('socks-proxy-agent');
-    const async = require("async");
+    const async = require('async');
     const stringHash = require('string-hash');
     const base = 'https://api.huobi.pro/';
-    const wapi = 'wss://api.huobi.pro/ws/';
     const stream = 'wss://api.huobi.pro/ws/';
     const combineStream = 'wss://api.huobi.pro/ws/';
     const userAgent = 'Mozilla/4.0 (compatible; Node Binance API)';
     const contentType = 'application/x-www-form-urlencoded';
-    
     let subscriptions = {};
     let depthCache = {};
     let depthCacheContext = {};
-    let ohlcLatest = {};
-    let klineQueue = {};
-    let ohlc = {};
+
     const default_options = {
         recvWindow: 60000, // to be lowered to 5000 in v0.5
         useServerTime: false,
@@ -59,19 +55,6 @@ module.exports = function() {
         let host = arr[2].split(':')[0];
         let port = arr[2].split(':')[1];
         return [arr[0],host,port];
-    }
-
-    /**
-     * Checks to see of the boject is iterable
-     * @param {object} obj - The object check
-     * @return {boolean} true or false is iterable
-     */
-    const isIterable = function(obj) {
-      // checks for null and undefined
-      if (obj === null) {
-        return false;
-      }
-      return typeof obj[Symbol.iterator] === 'function';
     }
 
     const addProxy = opt => {
@@ -146,26 +129,26 @@ module.exports = function() {
         proxyRequest(opt, callback);
     };
 
-    /**
-     * Make market request
-     * @param {string} url - The http endpoint
-     * @param {object} data - The data to send
-     * @param {function} callback - The callback method to call
-     * @param {string} method - the http method
-     * @return {undefined}
-     */
-    const marketRequest = function(url, data = {}, callback, method = 'GET') {
-        if ( !options.APIKEY ) throw Error('apiRequest: Invalid API Key');
-        let query = Object.keys(data).reduce(function(a,k){a.push(k+'='+encodeURIComponent(data[k]));return a},[]).join('&');
-
-        let opt = reqObj(
-          url+(query ? '?'+query : ''),
-          data,
-          method,
-          options.APIKEY
-        );
-        proxyRequest(opt, callback);
-    };
+    // /**
+    //  * Make market request
+    //  * @param {string} url - The http endpoint
+    //  * @param {object} data - The data to send
+    //  * @param {function} callback - The callback method to call
+    //  * @param {string} method - the http method
+    //  * @return {undefined}
+    //  */
+    // const marketRequest = function(url, data = {}, callback, method = 'GET') {
+    //     if ( !options.APIKEY ) throw Error('apiRequest: Invalid API Key');
+    //     let query = Object.keys(data).reduce(function(a,k){a.push(k+'='+encodeURIComponent(data[k]));return a},[]).join('&');
+    //
+    //     let opt = reqObj(
+    //       url+(query ? '?'+query : ''),
+    //       data,
+    //       method,
+    //       options.APIKEY
+    //     );
+    //     proxyRequest(opt, callback);
+    // };
 
     /**
      * Create a signed http request to the signed API
@@ -175,23 +158,22 @@ module.exports = function() {
      * @param {string} method - the http method
      * @return {undefined}
      */
-    const signedRequest = function(url, data = {}, callback, method = 'GET') {
-        if ( !options.APIKEY ) throw Error('apiRequest: Invalid API Key');
-        if ( !options.APISECRET ) throw Error('signedRequest: Invalid API Secret');
-        data.timestamp = new Date().getTime() + info.timeOffset;
-        if ( typeof data.recvWindow === 'undefined' ) data.recvWindow = options.recvWindow;
-        let query = Object.keys(data).reduce(function(a,k){a.push(k+'='+encodeURIComponent(data[k]));return a},[]).join('&');
-        let signature = crypto.createHmac('sha256', options.APISECRET).update(query).digest('hex'); // set the HMAC hash header
-
-        let opt = reqObj(
-          url+'?'+query+'&signature='+signature,
-          data,
-          method,
-          options.APIKEY
-        );
-        proxyRequest(opt, callback);
-    };
-    
+    // const signedRequest = function(url, data = {}, callback, method = 'GET') {
+    //     if ( !options.APIKEY ) throw Error('apiRequest: Invalid API Key');
+    //     if ( !options.APISECRET ) throw Error('signedRequest: Invalid API Secret');
+    //     data.timestamp = new Date().getTime() + info.timeOffset;
+    //     if ( typeof data.recvWindow === 'undefined' ) data.recvWindow = options.recvWindow;
+    //     let query = Object.keys(data).reduce(function(a,k){a.push(k+'='+encodeURIComponent(data[k]));return a},[]).join('&');
+    //     let signature = crypto.createHmac('sha256', options.APISECRET).update(query).digest('hex'); // set the HMAC hash header
+    //
+    //     let opt = reqObj(
+    //       url+'?'+query+'&signature='+signature,
+    //       data,
+    //       method,
+    //       options.APIKEY
+    //     );
+    //     proxyRequest(opt, callback);
+    // };
 
      /**
      * No-operation function
@@ -348,7 +330,6 @@ module.exports = function() {
       let httpsproxy = process.env.https_proxy || false;
       let socksproxy = process.env.socks_proxy || false;
       const queryParams = streams.join('/');
-      
       let ws = false;
 
       if ( socksproxy !== false ) {
@@ -361,7 +342,6 @@ module.exports = function() {
           });
 
           ws = new WebSocket(combineStream, { agent: agent });
-          
       } else if ( httpsproxy !== false ) {
           if ( options.verbose ) options.log('using proxy server ' + httpsproxy);
           let config = url.parse(httpsproxy);
@@ -382,27 +362,21 @@ module.exports = function() {
       ws.on('error', handleSocketError);
       ws.on('close', handleSocketClose.bind(ws, reconnect));
       ws.on('message', function(data) {
-          data = pako.inflate(data, {
-              to: 'string'
-          });
+          data = pako.inflate(data,{ to: 'string' });
           try {
             let msg = JSON.parse(data);
             //options.log(msg)
             if (msg.ping) {
-              ws.send(JSON.stringify({
-                  pong: msg.ping
-              }));
-            }else if (msg.subbed) {
+              ws.send(JSON.stringify({ pong: msg.ping }));
+            } else if (msg.subbed) {
               //options.log('subbed: '+msg.id +" status: "+msg.status );
-      
-            }else{ 
-              callback(JSON.parse(data));
+            } else {
+              callback( JSON.parse(data) );
             }
           } catch (error) {
-              options.log('CombinedStream: Parse error: '+error.message +"-> "+ JSON.stringify(data)  );
+              options.log('CombinedStream: Parse error: '+error.message +'-> '+ JSON.stringify(data) );
           }
       });
-    
       return ws;
     };
 
@@ -469,7 +443,7 @@ module.exports = function() {
      * @return {undefined}
      */
     const depthHandler = function(depth) {
-        let symbol = depth.ch.split(".")[1], obj;
+        let symbol = depth.ch.split('.')[1], obj;
         let context = depthCacheContext[symbol];
 
         let updateDepthCache = function() {
@@ -508,14 +482,14 @@ module.exports = function() {
             msg += ' Symptom: Gap between snapshot and first stream data.';
             if ( options.verbose ) options.log(msg);
             throw new Error(msg);
-        }  else {
+        } else {
             // This is our first legal update from the stream data
             updateDepthCache();
         }
     };
 
 
-    return { 
+    return {
       /**
         * Gets an option fiven a key
         * @param {object} opt - the object with the class configuration
@@ -557,18 +531,6 @@ module.exports = function() {
         */
        exchangeInfo: function(callback) {
         publicRequest(base+'v1/common/symbols', {}, callback);
-       },
-       /**
-       * gets the market asset of given symbol
-       * @param {string} symbol - the public api endpoint
-       * @return {undefined}
-       */
-       getMarket: function(symbol) {
-           const substring = symbol.substr(-3);
-           if ( substring === 'BTC' ) return 'BTC';
-           else if ( substring === 'ETH' ) return 'ETH';
-           else if ( substring === 'BNB' ) return 'BNB';
-           else if ( symbol.substr(-4) === 'USDT' ) return 'USDT';
        },
 
 
@@ -652,7 +614,7 @@ module.exports = function() {
 
                 let handleDepthStreamData = function(depth) {
                     //options.log("---->"+Object.keys(depth ))
-                    let symbol = depth.ch.split(".")[1];
+                    let symbol = depth.ch.split('.')[1];
                     let context = depthCacheContext[symbol];
                     if (context.messageQueue && !context.snapshotUpdateId ) {
                         context.messageQueue.push(depth);
@@ -666,40 +628,18 @@ module.exports = function() {
                     }
                 };
 
-                let getSymbolDepthSnapshot = function(symbol) {
-                    publicRequest(base+'market/depth', { symbol:symbol, type:"step0" }, function(error, json) {
-                        // Initialize depth cache from snapshot
-                        depthCache[symbol] = depthData(json);
-                        // Prepare depth cache context
-                        let context = depthCacheContext[symbol];
-                        context.snapshotUpdateId = json.ts;
-                        //options.log('symbol: ' + symbol+" delete queue");
-                        context.messageQueue = context.messageQueue.filter(depth => depth.ts > context.snapshotUpdateId);
-                        // Process any pending depth messages
-                        for ( let depth of context.messageQueue ) {
-
-                            /* Although sync errors shouldn't ever happen here, we catch and swallow them anyway
-                              just in case. The stream handler function above will deal with broken caches. */
-                            try {depthHandler(depth);} catch (err) {
-                                // do nothing
-                            }
-                        }
-                        delete context.messageQueue;
-                        if ( callback ) callback(symbol, depthCache[symbol]);
-                    });
-                };
-                let doSymbolDepthSnapshot = async function(symbol){
+                let getSymbolDepthSnapshot = function(symbol){
                       return new Promise((resolve, reject) => {
-                          publicRequest(base+'market/depth', { symbol:symbol, type:"step0" }, function(error, json) {
+                          publicRequest(base+'market/depth', { symbol:symbol, type:'step0' }, function(error, json) {
                               if (error) {
-                                  return reject (error)
+                                  return reject(error)
                               }
                               json.symb = symbol
                               resolve(json)
                           });
                       })
                 };
-                let doProcessDepthSnapshot = function (json) {
+                let updateSymbolDepthCache = function (json) {
                     let symbol = json.symb;
                     depthCache[symbol] = depthData(json);
                     // Prepare depth cache context
@@ -720,13 +660,6 @@ module.exports = function() {
                     if ( callback ) callback(symbol, depthCache[symbol]);
                 };
 
-
-
-
-
-
-
-
                 /* If an array of symbols are sent we use a combined stream connection rather.
                   This is transparent to the developer, and results in a single socket connection.
                   This essentially eliminates "unexpected response" errors when subscribing to a lot of data. */
@@ -736,7 +669,7 @@ module.exports = function() {
 
                     symbols.forEach(symbolDepthInit);
                     let streams = symbols.map(function (symbol) {
-                      return "market."+symbol.toLowerCase()+'.depth.step0'; 
+                      return 'market.'+symbol.toLowerCase()+'.depth.step0';
                        //return symbol.toLowerCase()+'@depth';
                     });
                     //options.log('streams: ' + streams);
@@ -745,14 +678,14 @@ module.exports = function() {
 
                         for (let symbol of symbols) {
                           ws.send(JSON.stringify({
-                              "sub": `market.${symbol.toLowerCase()}.depth.step0`,
-                              "id": `${symbol.toLowerCase()}`
+                              'sub': `market.${symbol.toLowerCase()}.depth.step0`,
+                              'id': `${symbol.toLowerCase()}`
                           }));
                          }
                         //async.mapLimit(symbols, symbols.length, getSymbolDepthSnapshot)
-                        async.mapLimit(symbols, symbols.length, doSymbolDepthSnapshot, (err, results) => {
+                        async.mapLimit(symbols, symbols.length, getSymbolDepthSnapshot, (err, results) => {
                             if (err) throw err
-                            results.forEach(doProcessDepthSnapshot);
+                            results.forEach(updateSymbolDepthCache);
                         })
                         //symbols.forEach(getSymbolDepthSnapshot);
                     });
@@ -777,7 +710,7 @@ module.exports = function() {
               */
               subscribe: function(url, callback, reconnect = false) {
                   return subscribe(url, callback, reconnect);
-              },
+              }
           }
     }
  }();
