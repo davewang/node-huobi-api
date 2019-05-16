@@ -1,6 +1,6 @@
 {
   "name": "node-huobi-api",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Node huobi API is an asynchronous node.js library for the huobi API designed to be easy to use.",
   "main": "node-huobi-api.js",
   "scripts": {

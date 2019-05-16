@@ -3,7 +3,7 @@ const TIMEOUT = 10000;
 let chai = require( 'chai' );
 let assert = chai.assert;
 let path = require( 'path' );
-let huobi = require( path.resolve( __dirname, 'node-huobi-api.js' ) );
+let huobi = require( path.resolve( __dirname, 'node-huobi-api.js' ) )();
 let util = require( 'util' );
 
 
@@ -16,9 +16,9 @@ let logger = {
 }
 
 let debug = function( x ) {
-    if ( typeof ( process.env.node_huobi_api ) === 'undefined' ) {
-      return;
-    }
+    // if ( typeof ( process.env.node_huobi_api ) === 'undefined' ) {
+    //   return;
+    // }
     logger.log( typeof ( x ) );
     logger.log( util.inspect( x ) );
 }
@@ -32,7 +32,8 @@ describe( 'Construct', function() {
     /*eslint no-undef: "error"*/
     it( 'Construct the huobi object', function( done ) {
         huobi.options( {
-        APIKEY: 'hello',
+        APIKEY: process.env.APIKEY,
+        APISECRET:process.env.APISECRET,
         useServerTime: true,
         reconnect: true,
         verbose: true,
@@ -46,6 +47,7 @@ describe( 'Construct', function() {
 describe( 'exchangeInfo', function() {
 it( 'Call exchangeInfo', function( done ) {
     huobi.exchangeInfo((error, data) => {
+        assert(error === null);
         debug( error );
         debug( data );
         done();
@@ -53,13 +55,55 @@ it( 'Call exchangeInfo', function( done ) {
 }).timeout( TIMEOUT );
 });
 
+describe( 'account', function() {
+    it( 'Call account', function( done ) {
+        huobi.account((error, data) => {
+            assert(error === null);
+            debug( error );
+            debug( data );
+            done();
+        });
+    }).timeout( TIMEOUT );
+});
+
+describe( 'balance', function() {
+    it( 'Call balance', function( done ) {
+        huobi.account((error, data) => {
+            assert(error === null);
+            debug( error );
+            debug( data );
+            if (error == null){
+                huobi.balance(data.data[0].id,(error1,data1)=>{
+                    debug( error );
+                    debug( data );
+                    done();
+                });
+            }
+        });
+    }).timeout( TIMEOUT );
+});
+
+
+describe( 'time', function() {
+    it( 'Call time', function( done ) {
+        huobi.time((error, data) => {
+            assert(error === null);
+            debug( error );
+            debug( data );
+            done();
+        });
+    }).timeout( TIMEOUT );
+});
+
+
 describe( 'depthCache', function() {
     it( 'Call depthCache', function( done ) {
         const tickers=['xrpbtc', 'bchusdt'];
-        //done();
         huobi.websockets.depthCache( tickers,(symbol, depth) => {
             debug(symbol+'=='+ JSON.stringify( depth) );
+            //done();
         },10);
-        done();
+        //done();
     }).timeout( TIMEOUT );
 });
+
