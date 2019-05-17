@@ -101,7 +101,7 @@ describe( 'depthCache', function() {
         const tickers=['xrpbtc', 'bchusdt'];
         huobi.websockets.depthCache( tickers,(symbol, depth) => {
             debug(symbol+'=='+ JSON.stringify( depth) );
-            done();
+
         },10);
         //done();
     }).timeout( TIMEOUT );

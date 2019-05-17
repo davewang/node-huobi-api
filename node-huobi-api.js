@@ -196,8 +196,9 @@ let api = function Huobi(){
             if (Array.isArray(symbols)) {
                 symbols.forEach(s => {
                     let channel = {};
-                    channel.sub = "market." + s.toLowerCase() + ".depth.step0";
-                    channel.id = new Date().getTime()+s.toLowerCase();
+                    channel.sub = "market." + s + ".depth.step0";
+                    channel.id = new Date().getTime()+s;
+                   // Huobi.options.log(channel.sub);
                     ws.send(JSON.stringify(channel));
                 });
             }else{
@@ -211,7 +212,7 @@ let api = function Huobi(){
         };
         if (Huobi.options.verbose) Huobi.options.log('Subscribed to ' + stream);
         ws.reconnect = Huobi.options.reconnect;
-        ws.endpoint = new Date().getTime();
+        ws.endpoint = new Date().getTime()+"depth";
         ws.isAlive = false;
         ws.on('open', handleSocketOpen.bind(ws, opened_callback ? doSymbolsToWebsocket  : opened_callback));
         ws.on('pong', handleSocketHeartbeat);
@@ -226,9 +227,14 @@ let api = function Huobi(){
                     ws.send(JSON.stringify({ pong: msg.ping }));
                    // Huobi.options.log('ping: '+msg.ping  );
                 } else if (msg.subbed) {
-                    Huobi.options.log('subbed: '+msg.id +" status: "+msg.status );
+                    //Huobi.options.log('subbed: '+msg.id +" status: "+msg.status );
                      //options.log('subbed: '+msg.id +" status: "+msg.status );
                 } else {
+                    if (msg.status && msg.status == 'error') {
+                        ws.send(JSON.stringify({ pong: msg.ping }));
+                        // Huobi.options.log('ping: '+msg.ping  );
+                        throw new Error(msg)
+                    }
                     callback( JSON.parse(data) );
                 }
             } catch (error) {
@@ -316,8 +322,9 @@ let api = function Huobi(){
     };
 
     const parseSymbol = function (depth) {
+        //Huobi.options.log("parseSymbol = ",depth)
         return depth.ch.split('.')[1];
-    }
+    };
 
     /**
      * Used for /depth endpoint
@@ -327,7 +334,8 @@ let api = function Huobi(){
     const depthHandler = function (depth) {
         let symbol = parseSymbol(depth), obj;
         let context = Huobi.depthCacheContext[symbol];
-
+        //Huobi.options.log(depth);
+        //Huobi.options.log("context is" + (context != null));
         let updateDepthCache = function () {
             Huobi.depthCache[symbol].eventTime = depth.ts;
             for (obj of depth.tick.bids) { //bids
@@ -410,6 +418,35 @@ let api = function Huobi(){
      */
     const noop = function () {
         // do nothing
+    };
+    /**
+     * Gets depth cache for given symbol
+     * @param {string} symbol - the symbol to fetch
+     * @return {object} - the depth cache object
+     */
+    const getDepthCache = function (symbol) {
+        if (typeof Huobi.depthCache[symbol] === 'undefined') return { bids: {}, asks: {} };
+        return Huobi.depthCache[symbol];
+    };
+    /**
+     * Calculate Buy/Sell volume from DepthCache
+     * @param {string} symbol - the symbol to fetch
+     * @return {object} - the depth volume cache object
+     */
+    const depthVolume = function (symbol) {
+        let cache = getDepthCache(symbol), quantity, price;
+        let bidbase = 0, askbase = 0, bidqty = 0, askqty = 0;
+        for (price in cache.bids) {
+            quantity = cache.bids[price];
+            bidbase += parseFloat((quantity * parseFloat(price)).toFixed(8));
+            bidqty += quantity;
+        }
+        for (price in cache.asks) {
+            quantity = cache.asks[price];
+            askbase += parseFloat((quantity * parseFloat(price)).toFixed(8));
+            askqty += quantity;
+        }
+        return { bids: bidbase, asks: askbase, bidQty: bidqty, askQty: askqty };
     };
     /**
      * Reworked Tuitio's heartbeat code into a shared single interval tick
@@ -552,18 +589,18 @@ let api = function Huobi(){
          * @param {symbol} symbol - get depch cache for this symbol
          * @return {object} - object
          */
-        // depthCache: function (symbol) {
-        //     return getDepthCache(symbol);
-        // },
-        //
-        // /**
-        //  * Gets depth volume for given symbol
-        //  * @param {symbol} symbol - get depch volume for this symbol
-        //  * @return {object} - object
-        //  */
-        // depthVolume: function (symbol) {
-        //     return depthVolume(symbol);
-        // },
+        depthCache: function (symbol) {
+            return getDepthCache(symbol);
+        },
+
+        /**
+         * Gets depth volume for given symbol
+         * @param {symbol} symbol - get depch volume for this symbol
+         * @return {object} - object
+         */
+        depthVolume: function (symbol) {
+            return depthVolume(symbol);
+        },
         //
         // /**
         //  * Count decimal places
@@ -647,57 +684,57 @@ let api = function Huobi(){
         //     });
         // },
         //
-        // /**
-        //  * Sorts bids
-        //  * @param {string} symbol - the object
-        //  * @param {int} max - the max number of bids
-        //  * @param {string} baseValue - the object
-        //  * @return {object} - the object
-        //  */
-        // sortBids: function (symbol, max = Infinity, baseValue = false) {
-        //     let object = {}, count = 0, cache;
-        //     if (typeof symbol === 'object') cache = symbol;
-        //     else cache = getDepthCache(symbol).bids;
-        //     let sorted = Object.keys(cache).sort(function (a, b) {
-        //         return parseFloat(b) - parseFloat(a)
-        //     });
-        //     let cumulative = 0;
-        //     for (let price of sorted) {
-        //         if (baseValue === 'cumulative') {
-        //             cumulative += parseFloat(cache[price]);
-        //             object[price] = cumulative;
-        //         } else if (!baseValue) object[price] = parseFloat(cache[price]);
-        //         else object[price] = parseFloat((cache[price] * parseFloat(price)).toFixed(8));
-        //         if (++count >= max) break;
-        //     }
-        //     return object;
-        // },
-        //
-        // /**
-        //  * Sorts asks
-        //  * @param {string} symbol - the object
-        //  * @param {int} max - the max number of bids
-        //  * @param {string} baseValue - the object
-        //  * @return {object} - the object
-        //  */
-        // sortAsks: function (symbol, max = Infinity, baseValue = false) {
-        //     let object = {}, count = 0, cache;
-        //     if (typeof symbol === 'object') cache = symbol;
-        //     else cache = getDepthCache(symbol).asks;
-        //     let sorted = Object.keys(cache).sort(function (a, b) {
-        //         return parseFloat(a) - parseFloat(b);
-        //     });
-        //     let cumulative = 0;
-        //     for (let price of sorted) {
-        //         if (baseValue === 'cumulative') {
-        //             cumulative += parseFloat(cache[price]);
-        //             object[price] = cumulative;
-        //         } else if (!baseValue) object[price] = parseFloat(cache[price]);
-        //         else object[price] = parseFloat((cache[price] * parseFloat(price)).toFixed(8));
-        //         if (++count >= max) break;
-        //     }
-        //     return object;
-        // },
+        /**
+         * Sorts bids
+         * @param {string} symbol - the object
+         * @param {int} max - the max number of bids
+         * @param {string} baseValue - the object
+         * @return {object} - the object
+         */
+        sortBids: function (symbol, max = Infinity, baseValue = false) {
+            let object = {}, count = 0, cache;
+            if (typeof symbol === 'object') cache = symbol;
+            else cache = getDepthCache(symbol).bids;
+            let sorted = Object.keys(cache).sort(function (a, b) {
+                return parseFloat(b) - parseFloat(a)
+            });
+            let cumulative = 0;
+            for (let price of sorted) {
+                if (baseValue === 'cumulative') {
+                    cumulative += parseFloat(cache[price]);
+                    object[price] = cumulative;
+                } else if (!baseValue) object[price] = parseFloat(cache[price]);
+                else object[price] = parseFloat((cache[price] * parseFloat(price)).toFixed(8));
+                if (++count >= max) break;
+            }
+            return object;
+        },
+
+        /**
+         * Sorts asks
+         * @param {string} symbol - the object
+         * @param {int} max - the max number of bids
+         * @param {string} baseValue - the object
+         * @return {object} - the object
+         */
+        sortAsks: function (symbol, max = Infinity, baseValue = false) {
+            let object = {}, count = 0, cache;
+            if (typeof symbol === 'object') cache = symbol;
+            else cache = getDepthCache(symbol).asks;
+            let sorted = Object.keys(cache).sort(function (a, b) {
+                return parseFloat(a) - parseFloat(b);
+            });
+            let cumulative = 0;
+            for (let price of sorted) {
+                if (baseValue === 'cumulative') {
+                    cumulative += parseFloat(cache[price]);
+                    object[price] = cumulative;
+                } else if (!baseValue) object[price] = parseFloat(cache[price]);
+                else object[price] = parseFloat((cache[price] * parseFloat(price)).toFixed(8));
+                if (++count >= max) break;
+            }
+            return object;
+        },
         //
         // /**
         //  * Returns the first property of an object
@@ -1481,7 +1518,7 @@ let api = function Huobi(){
                     // subscription = subscribeCombined(streams, callback, reconnect);
                 } else {
                     let symbol = symbols;
-                    subscription = subscribe(symbol.toLowerCase(), callback, reconnect);
+                    subscription = subscribe(symbol, callback, reconnect);
                 }
                 return subscription.endpoint;
             },
@@ -1499,6 +1536,7 @@ let api = function Huobi(){
                 };
 
                 let symbolDepthInit = function (symbol) {
+                    //Huobi.options.log("symbolDepthInit ====="+symbol);
                     if (typeof Huobi.depthCacheContext[symbol] === 'undefined') Huobi.depthCacheContext[symbol] = {};
 
                     let context = Huobi.depthCacheContext[symbol];
@@ -1513,17 +1551,18 @@ let api = function Huobi(){
                     if (Huobi.depthCacheContext[symbol]) {
                         let context = Huobi.depthCacheContext[symbol];
                         context.endpointId = endpointId;
+                        //Huobi.options.log("symbol "+symbol+" endpointId "+endpointId);
                     }
                 };
 
                 let handleDepthStreamData = function (depth) {
                     let symbol = parseSymbol(depth);
                     let context = Huobi.depthCacheContext[symbol];
-                    try {
+                  //  try {
                         depthHandler(depth);
-                    } catch (err) {
-                        return terminate(context.endpointId, true);
-                    }
+                    // } catch (err) {
+                    //     return terminate(context.endpointId, true);
+                    // }
                     if (callback) callback(symbol, Huobi.depthCache[symbol], context);
 
                 };
@@ -1582,7 +1621,7 @@ let api = function Huobi(){
                 } else {
                     let symbol = symbols;
                     symbolDepthInit(symbol);
-                    subscription = subscribe(symbol.toLowerCase(), handleDepthStreamData, reconnect, function () {
+                    subscription = subscribe(symbol, handleDepthStreamData, reconnect, function () {
                     });
                     assignEndpointIdToContext(symbol, subscription.endpoint);
                 }
