@@ -16,13 +16,13 @@ let api = function Huobi(){
     const pako = require('pako');
     const HttpsProxyAgent = require('https-proxy-agent');
     const SocksProxyAgent = require('socks-proxy-agent');
-    const stringHash = require('string-hash');
-    const async = require('async');
+    //const stringHash = require('string-hash');
+    //const async = require('async');
     const site = 'api.huobi.pro';
     const base = 'https://'+site;
     const wapi = 'https://api.binance.com/wapi/';
     const stream = 'wss://'+site+'/ws/';
-    const combineStream = 'wss://api.huobi.pro/ws/';
+    //const combineStream = 'wss://api.huobi.pro/ws/';
     const userAgent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36';//'Mozilla/4.0 (compatible; Node Huobi API)';
     const contentType = 'application/x-www-form-urlencoded';
 
@@ -209,7 +209,7 @@ let api = function Huobi(){
 
 
         };
-        if (Huobi.options.verbose) Huobi.options.log('Subscribed to ' + endpoint);
+        if (Huobi.options.verbose) Huobi.options.log('Subscribed to ' + stream);
         ws.reconnect = Huobi.options.reconnect;
         ws.endpoint = new Date().getTime();
         ws.isAlive = false;

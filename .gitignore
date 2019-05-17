@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+*.idea
+*target/
+*.iml
+package-lock.json
+#System Files
+.DS_Store
+Thumbs.db
+
+vendor/*
+!vendor/vendor.json
+
+tmp/*
+gorm.db
+coverage.txt
+
+bak.*
