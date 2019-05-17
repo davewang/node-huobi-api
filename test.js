@@ -107,3 +107,13 @@ describe( 'depthCache', function() {
     }).timeout( TIMEOUT );
 });
 
+describe( 'depthCacheStaggered', function() {
+    it( 'Call depthCacheStaggered', function( done ) {
+        const tickers=['xrpbtc', 'bchusdt'];
+        huobi.websockets.depthCacheStaggered( tickers,(symbol, depth) => {
+            debug(symbol+'=='+ JSON.stringify( depth) );
+            done();
+        },10);
+        //done();
+    }).timeout( TIMEOUT );
+});

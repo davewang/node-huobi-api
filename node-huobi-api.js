@@ -1601,14 +1601,18 @@ let api = function Huobi(){
                 if (!Array.isArray(symbols)) symbols = [symbols];
                 let chain = null;
 
-                symbols.forEach(symbol => {
-                    let promise = () => new Promise(resolve => {
-                        this.depthCache(symbol, callback, limit);
-                        setTimeout(resolve, stagger);
-                    });
-                    chain = chain ? chain.then(promise) : promise();
+                // symbols.forEach(symbol => {
+                //     let promise = () => new Promise(resolve => {
+                //         this.depthCache(symbol, callback, limit);
+                //         setTimeout(resolve, stagger);
+                //     });
+                //     chain = chain ? chain.then(promise) : promise();
+                // });
+                let promise = () => new Promise(resolve => {
+                    this.depthCache(symbols, callback, limit);
+                    setTimeout(resolve, stagger);
                 });
-
+                chain = chain ? chain.then(promise) : promise();
                 return chain;
             },
 
