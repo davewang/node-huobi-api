@@ -220,8 +220,8 @@ let api = function Huobi(){
         ws.on('close', handleSocketClose.bind(ws, reconnect));
         ws.on('message', function (data) {
             data = pako.inflate(data,{ to: 'string' });
-            //Huobi.options.log('ws data: ' + data);
-            try {
+            Huobi.options.log('ws data: ' + data);
+            //try {
                 let msg = JSON.parse(data);
                 if (msg.ping) {
                     ws.send(JSON.stringify({ pong: msg.ping }));
@@ -232,15 +232,15 @@ let api = function Huobi(){
                 } else {
                     if (msg.status && msg.status == 'error') {
                         ws.send(JSON.stringify({ pong: msg.ping }));
-                        // Huobi.options.log('ping: '+msg.ping  );
+                         Huobi.options.log('error: '+ msg );
                         throw new Error(msg)
                     }
                     callback( JSON.parse(data) );
                 }
-            } catch (error) {
-              //options.log('CombinedStream: Parse error: '+error.message +'-> '+ JSON.stringify(data) );
-              Huobi.options.log('Parse error: ' + error.message);
-            }
+            // } catch (error) {
+            //   //options.log('CombinedStream: Parse error: '+error.message +'-> '+ JSON.stringify(data) );
+            //   Huobi.options.log('Parse error: ' + error.message);
+            // }
             // try {
             //     callback(JSON.parse(data));
             // } catch (error) {
