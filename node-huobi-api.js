@@ -198,12 +198,13 @@ let api = function Huobi(){
                     let channel = {};
                     channel.sub = "market." + s + ".depth.step0";
                     channel.id = new Date().getTime()+s;
-                   // Huobi.options.log(channel.sub);
+                    Huobi.options.log(channel.sub);
                     ws.send(JSON.stringify(channel));
                 });
             }else{
                 let channel = {};
                 channel.sub = "market." + symbols + ".depth.step0";
+                Huobi.options.log(channel.sub);
                 channel.id = new Date().getTime()+symbols;
                 ws.send(JSON.stringify(channel));
             }
