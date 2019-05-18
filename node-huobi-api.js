@@ -220,7 +220,7 @@ let api = function Huobi(){
         ws.on('close', handleSocketClose.bind(ws, reconnect));
         ws.on('message', function (data) {
             data = pako.inflate(data,{ to: 'string' });
-            Huobi.options.log('ws data: ' + data);
+            //Huobi.options.log('ws data: ' + data);
             //try {
                 let msg = JSON.parse(data);
                 if (msg.ping) {
