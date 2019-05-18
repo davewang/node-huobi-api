@@ -233,7 +233,8 @@ let api = function Huobi(){
                 } else {
                     if (msg.status && msg.status == 'error') {
                         Huobi.options.log('error: '+ data );
-                        throw new Error(msg)
+                        return;
+                        //throw new Error(msg)
                     }
                     callback( JSON.parse(data) );
                 }
