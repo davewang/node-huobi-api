@@ -231,8 +231,7 @@ let api = function Huobi(){
                      //options.log('subbed: '+msg.id +" status: "+msg.status );
                 } else {
                     if (msg.status && msg.status == 'error') {
-                        ws.send(JSON.stringify({ pong: msg.ping }));
-                         Huobi.options.log('error: '+ msg );
+                        Huobi.options.log('error: '+ data );
                         throw new Error(msg)
                     }
                     callback( JSON.parse(data) );
